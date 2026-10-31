@@ -92,6 +92,12 @@ jobs:
           DEX_DUMP: /tmp/dex-database.sql.gz
           PUBLISH_WORDS: 'false'
         run: python scripts/build_word_index.py
+      - name: Audit ROGI provenance through entry and definition links (read-only)
+        if: inputs.dry_run == 'true'
+        env:
+          DEX_DUMP: /tmp/dex-database.sql.gz
+          TARGET_WORD: ROGI
+        run: python scripts/audit_word_provenance.py
       - name: Import redistributable sources and definitions
         if: inputs.import_licensed_definitions == 'true' && inputs.dry_run == 'false' && inputs.smoke_import == 'false'
         env:
