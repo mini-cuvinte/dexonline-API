@@ -1,0 +1,40 @@
+name: Dictionary build
+on:
+  workflow_dispatch:
+    inputs:
+      label:
+        description: Unique version label
+        required: true
+        type: string
+      source:
+        description: Provenance and license reference
+        required: true
+        type: string
+      file_path:
+        description: Path to committed reviewed UTF-8 word list
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: dictionary-build
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: modernize/python-fastapi
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install 'psycopg[binary]>=3.2,<4'
+      - name: Build isolated inactive version
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          PYTHONUNBUFFERED: '1'
+          VERSION_LABEL: ${{ inputs.label }}
+          SOURCE_LABEL: ${{ inputs.source }}
+          WORD_FILE: ${{ inputs.file_path }}
+        run: python scripts/dictionary_build.py "$VERSION_LABEL" "$WORD_FILE" "$SOURCE_LABEL"
