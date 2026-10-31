@@ -56,6 +56,10 @@ jobs:
           DRY_RUN: ${{ inputs.dry_run }}
           DEX_DUMP: /tmp/dex-database.sql.gz
         run: python scripts/import_dexonline.py
+      - name: Preflight official schema and license metadata
+        run: python scripts/preflight_dexonline.py
+        env:
+          DEX_DUMP: /tmp/dex-database.sql.gz
       - name: Import redistributable sources and definitions
         if: inputs.import_licensed_definitions == 'true' && inputs.dry_run == 'false'
         env:
