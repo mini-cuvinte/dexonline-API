@@ -1,0 +1,35 @@
+name: DEXonline import (manual)
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Validate official DEXonline archive without database writes'
+        required: true
+        default: 'true'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+permissions:
+  contents: read
+concurrency:
+  group: dexonline-import
+  cancel-in-progress: false
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 330
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: modernize/python-fastapi
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Download official dump
+        run: curl --fail --location --retry 4 --output /tmp/dex-database.sql.gz https://dexonline.ro/static/download/dex-database.sql.gz
+      - name: Audit dictionary archive
+        env:
+          DRY_RUN: ${{ inputs.dry_run }}
+          DEX_DUMP: /tmp/dex-database.sql.gz
+        run: python scripts/import_dexonline.py
