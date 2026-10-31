@@ -37,6 +37,15 @@ jobs:
       - name: Install PostgreSQL driver
         if: inputs.import_licensed_definitions == 'true'
         run: pip install 'psycopg[binary]>=3.2,<4'
+      - name: Validate execution mode
+        env:
+          DRY_RUN: ${{ inputs.dry_run }}
+          IMPORT: ${{ inputs.import_licensed_definitions }}
+        run: |
+          if [ "$DRY_RUN" = 'false' ] && [ "$IMPORT" != 'true' ]; then
+            echo 'Invalid mode: choose dry_run=true or import_licensed_definitions=true' >&2
+            exit 1
+          fi
       - name: Download official dump
         run: curl --fail --location --retry 4 --output /tmp/dex-database.sql.gz https://dexonline.ro/static/download/dex-database.sql.gz
       - name: Audit dictionary archive
@@ -48,6 +57,6 @@ jobs:
       - name: Import redistributable sources and definitions
         if: inputs.import_licensed_definitions == 'true' && inputs.dry_run == 'false'
         env:
-          DATABASE_URL: \${{ secrets.DATABASE_URL }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
           DEX_DUMP: /tmp/dex-database.sql.gz
         run: python scripts/import_licensed_definitions.py
