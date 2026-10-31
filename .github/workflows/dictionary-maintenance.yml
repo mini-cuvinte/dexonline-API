@@ -1,0 +1,79 @@
+name: Dictionary maintenance
+on:
+  workflow_dispatch:
+    inputs:
+      operation:
+        description: Override a word or remove an archived version
+        type: choice
+        options:
+          - override
+          - cleanup
+        required: true
+      word:
+        description: Word to override (override only)
+        type: string
+        required: false
+      allowed:
+        description: Allow this word (override only)
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+        required: true
+      reason:
+        description: Reason for the correction (override only)
+        type: string
+        required: false
+      version:
+        description: Archived version ID (cleanup only)
+        type: string
+        required: false
+      confirm:
+        description: Type APPLY for override or DELETE_ARCHIVED for cleanup
+        type: string
+        required: true
+permissions:
+  contents: read
+concurrency:
+  group: dictionary-maintenance
+  cancel-in-progress: false
+jobs:
+  maintenance:
+    runs-on: ubuntu-latest
+    environment: dictionary-production
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: modernize/python-fastapi
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install 'psycopg[binary]>=3.2,<4'
+      - name: Validate requested operation
+        env:
+          OPERATION: ${{ inputs.operation }}
+          CONFIRM: ${{ inputs.confirm }}
+          WORD: ${{ inputs.word }}
+          REASON: ${{ inputs.reason }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          if [[ "$OPERATION" == override ]]; then
+            [[ "$CONFIRM" == APPLY && -n "$WORD" && -n "$REASON" ]] || exit 1
+          else
+            [[ "$CONFIRM" == DELETE_ARCHIVED && "$VERSION" =~ ^[0-9]+$ ]] || exit 1
+          fi
+      - name: Apply maintenance
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          OPERATION: ${{ inputs.operation }}
+          WORD: ${{ inputs.word }}
+          ALLOWED: ${{ inputs.allowed }}
+          REASON: ${{ inputs.reason }}
+          VERSION: ${{ inputs.version }}
+          PYTHONUNBUFFERED: '1'
+        run: |
+          if [[ "$OPERATION" == override ]]; then
+            python scripts/set_dictionary_override.py "$WORD" "$ALLOWED" "$REASON"
+          else
+            python scripts/cleanup_dictionary_version.py "$VERSION"
+          fi
