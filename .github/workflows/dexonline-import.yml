@@ -60,6 +60,11 @@ jobs:
         run: python scripts/preflight_dexonline.py
         env:
           DEX_DUMP: /tmp/dex-database.sql.gz
+      - name: Parse bounded sample without database writes
+        run: python scripts/sample_dexonline.py
+        env:
+          DEX_DUMP: /tmp/dex-database.sql.gz
+          SAMPLE_LIMIT: '100'
       - name: Import redistributable sources and definitions
         if: inputs.import_licensed_definitions == 'true' && inputs.dry_run == 'false'
         env:
