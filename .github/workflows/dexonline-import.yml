@@ -10,6 +10,14 @@ on:
         options:
           - 'true'
           - 'false'
+      smoke_import:
+        description: 'Import up to 100 eligible definitions into staging tables (database writes)'
+        required: true
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
       import_licensed_definitions:
         description: 'Run real licensed Source/Definition import (requires DATABASE_URL secret)'
         required: true
@@ -35,14 +43,15 @@ jobs:
         with:
           python-version: '3.12'
       - name: Install PostgreSQL driver
-        if: inputs.import_licensed_definitions == 'true' || inputs.dry_run == 'true'
+        if: inputs.import_licensed_definitions == 'true' || inputs.smoke_import == 'true'
         run: pip install 'psycopg[binary]>=3.2,<4'
       - name: Validate execution mode
         env:
           DRY_RUN: ${{ inputs.dry_run }}
           IMPORT: ${{ inputs.import_licensed_definitions }}
+          SMOKE: ${{ inputs.smoke_import }}
         run: |
-          if [ "$DRY_RUN" = 'false' ] && [ "$IMPORT" != 'true' ]; then
+          if [ "$DRY_RUN" = 'false' ] && [ "$IMPORT" != 'true' ] && [ "$SMOKE" != 'true' ]; then
             echo 'Invalid mode: choose dry_run=true or import_licensed_definitions=true' >&2
             exit 1
           fi
@@ -65,8 +74,15 @@ jobs:
         env:
           DEX_DUMP: /tmp/dex-database.sql.gz
           SAMPLE_LIMIT: '100'
+      - name: Smoke import eligible definitions (max 100)
+        if: inputs.smoke_import == 'true' && inputs.dry_run == 'false' && inputs.import_licensed_definitions == 'false'
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DEX_DUMP: /tmp/dex-database.sql.gz
+          SMOKE_LIMIT: '100'
+        run: python scripts/smoke_import.py
       - name: Import redistributable sources and definitions
-        if: inputs.import_licensed_definitions == 'true' && inputs.dry_run == 'false'
+        if: inputs.import_licensed_definitions == 'true' && inputs.dry_run == 'false' && inputs.smoke_import == 'false'
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           DEX_DUMP: /tmp/dex-database.sql.gz
