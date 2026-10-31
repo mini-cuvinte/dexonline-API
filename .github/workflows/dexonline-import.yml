@@ -100,6 +100,11 @@ jobs:
           DEX_DUMP: /tmp/dex-database.sql.gz
           TARGET_WORD: ROGI
         run: python scripts/audit_word_provenance.py
+      - name: Audit expanded direct and indirect word eligibility (read-only)
+        if: inputs.dry_run == 'true'
+        env:
+          DEX_DUMP: /tmp/dex-database.sql.gz
+        run: python scripts/audit_expanded_eligibility.py
       - name: Import redistributable sources and definitions
         if: inputs.import_licensed_definitions == 'true' && inputs.dry_run == 'false' && inputs.smoke_import == 'false'
         env:
