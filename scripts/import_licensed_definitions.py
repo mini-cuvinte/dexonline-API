@@ -26,9 +26,9 @@ def values(sql):
             continue
         if quoted:
             if escaped:
-                field.append({"n": "\\n", "r": "\\r", "t": "\\t", "0": "\\x00"}.get(char, char))
+                field.append({"n": "\n", "r": "\r", "t": "\t", "0": "\x00"}.get(char, char))
                 escaped = False
-            elif char == "\\\\":
+            elif char == "\\":
                 escaped = True
             elif char == "'":
                 quoted = False
@@ -60,11 +60,11 @@ def main():
             cur.execute("select count(*) from dexonline.import_manifest")
             print("Prepared tables:", cur.fetchone()[0])
         db.commit()
-        # Source records precede Definition in the official dump.
+        # The official dump is alphabetical: Definition occurs before Source.\n        # Pass 1 imports Source and SourceType, pass 2 imports licensed Definition.
         with gzip.open(archive, "rt", encoding="utf-8", errors="replace") as stream:
             for line in stream:
                 match = CREATE.match(line)
-                if match and match.group(1) in TABLES:
+                if match and match.group(1) in phase:
                     table = match.group(1)
                     columns = []
                     for schema_line in stream:
@@ -76,7 +76,7 @@ def main():
                     cols[table] = columns
                     continue
                 match = INSERT.match(line)
-                if not match or match.group(1) not in TABLES:
+                if not match or match.group(1) not in phase:
                     continue
                 table = match.group(1)
                 if table not in cols:
