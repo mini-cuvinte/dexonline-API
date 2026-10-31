@@ -35,6 +35,8 @@ jobs:
   import:
     runs-on: ubuntu-latest
     timeout-minutes: 330
+    env:
+      PYTHONUNBUFFERED: '1'
     steps:
       - uses: actions/checkout@v4
         with:
