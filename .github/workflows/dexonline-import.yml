@@ -35,7 +35,7 @@ jobs:
         with:
           python-version: '3.12'
       - name: Install PostgreSQL driver
-        if: inputs.import_licensed_definitions == 'true'
+        if: inputs.import_licensed_definitions == 'true' || inputs.dry_run == 'true'
         run: pip install 'psycopg[binary]>=3.2,<4'
       - name: Validate execution mode
         env:
@@ -46,6 +46,8 @@ jobs:
             echo 'Invalid mode: choose dry_run=true or import_licensed_definitions=true' >&2
             exit 1
           fi
+      - name: Test SQL row parser
+        run: python -m unittest discover -s scripts -p 'test_sql_parser.py' -v
       - name: Download official dump
         run: curl --fail --location --retry 4 --output /tmp/dex-database.sql.gz https://dexonline.ro/static/download/dex-database.sql.gz
       - name: Audit dictionary archive
