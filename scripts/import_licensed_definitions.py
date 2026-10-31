@@ -61,7 +61,8 @@ def main():
             print("Prepared tables:", cur.fetchone()[0])
         db.commit()
         # The official dump is alphabetical: Definition occurs before Source.\n        # Pass 1 imports Source and SourceType, pass 2 imports licensed Definition.
-        with gzip.open(archive, "rt", encoding="utf-8", errors="replace") as stream:
+        for phase in (("Source", "SourceType"), ("Definition",)):
+          with gzip.open(archive, "rt", encoding="utf-8", errors="replace") as stream:
             for line in stream:
                 match = CREATE.match(line)
                 if match and match.group(1) in phase:
