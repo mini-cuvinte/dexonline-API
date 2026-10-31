@@ -1,0 +1,35 @@
+name: Dictionary release or rollback
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Existing validated dictionary version ID
+        required: true
+        type: string
+      confirm:
+        description: Type PUBLISH to activate or roll back
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: dictionary-release
+  cancel-in-progress: false
+jobs:
+  release:
+    if: inputs.confirm == 'PUBLISH'
+    runs-on: ubuntu-latest
+    environment: dictionary-production
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: modernize/python-fastapi
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install 'psycopg[binary]>=3.2,<4'
+      - name: Atomic activation
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          PYTHONUNBUFFERED: '1'
+        run: python scripts/dictionary_release.py "${{ inputs.version }}"
