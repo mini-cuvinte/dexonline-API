@@ -60,7 +60,7 @@ def main():
             cur.execute("select count(*) from dexonline.import_manifest")
             print("Prepared tables:", cur.fetchone()[0])
         db.commit()
-        # The official dump is alphabetical: Definition occurs before Source.\n        # Pass 1 imports Source and SourceType, pass 2 imports licensed Definition.
+        # Two passes ensure license metadata is available before definitions.
         for phase in (("Source", "SourceType"), ("Definition",)):
           with gzip.open(archive, "rt", encoding="utf-8", errors="replace") as stream:
             for line in stream:
@@ -69,7 +69,7 @@ def main():
                     table = match.group(1)
                     columns = []
                     for schema_line in stream:
-                        if schema_line.startswith(") ENGINE"):
+                        if schema_line.startswith(") ENGINE") or schema_line.startswith(") "):
                             break
                         column = COLUMN.match(schema_line)
                         if column:
