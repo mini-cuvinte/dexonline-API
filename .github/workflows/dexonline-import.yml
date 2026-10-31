@@ -10,6 +10,14 @@ on:
         options:
           - 'true'
           - 'false'
+      import_licensed_definitions:
+        description: 'Run real licensed Source/Definition import (requires DATABASE_URL secret)'
+        required: true
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
 permissions:
   contents: read
 concurrency:
@@ -26,6 +34,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Install PostgreSQL driver
+        if: inputs.import_licensed_definitions == 'true'
+        run: pip install 'psycopg[binary]>=3.2,<4'
       - name: Download official dump
         run: curl --fail --location --retry 4 --output /tmp/dex-database.sql.gz https://dexonline.ro/static/download/dex-database.sql.gz
       - name: Audit dictionary archive
@@ -33,3 +44,9 @@ jobs:
           DRY_RUN: ${{ inputs.dry_run }}
           DEX_DUMP: /tmp/dex-database.sql.gz
         run: python scripts/import_dexonline.py
+      - name: Import redistributable sources and definitions
+        if: inputs.import_licensed_definitions == 'true' && inputs.dry_run == 'false'
+        env:
+          DATABASE_URL: \${{ secrets.DATABASE_URL }}
+          DEX_DUMP: /tmp/dex-database.sql.gz
+        run: python scripts/import_licensed_definitions.py
