@@ -2,6 +2,12 @@ from bs4 import BeautifulSoup
 import requests
 import html5lib
 import random
+import os
+from urllib.parse import quote
+
+DEXONLINE_BASE_URL = os.environ.get('DEXONLINE_BASE_URL', 'https://dexonline.ro').rstrip('/')
+DEXONLINE_TIMEOUT = float(os.environ.get('DEXONLINE_TIMEOUT', '15'))
+DEXONLINE_DEFINITION_SELECTOR = os.environ.get('DEXONLINE_DEFINITION_SELECTOR', 'span.def')
 
 
 """
@@ -36,9 +42,10 @@ def getWordOfThe(link=None):
 	Universal function that receives a link and returns the span tags
 """
 def getTags(link=None, tag=None, clas=None):
-	response = requests.get(link)
+	response = requests.get(link, timeout=DEXONLINE_TIMEOUT, headers={'User-Agent': 'mini-cuvinte-dexonline-api/0.1'})
+	response.raise_for_status()
 	soup = BeautifulSoup(response.content, features="html5lib")
-	spans = soup.find_all(str(tag),str(clas))
+	spans = soup.select(DEXONLINE_DEFINITION_SELECTOR) if tag == 'span' and clas == 'def' else soup.find_all(str(tag), str(clas))
 
 	return spans
 
@@ -74,7 +81,7 @@ def toString(listOfDefinition=['Default word', 'Default definition']):
 	In every list is present: word and definition
 """
 def getWordDefinition(word=None):
-	link = 'https://dexonline.ro/definitie/' + str(word) + '/expandat'
+	link = DEXONLINE_BASE_URL + '/definitie/' + quote(str(word), safe='') + '/expandat'
 
 	# Call function to get spans by link
 	spans = getTags(link, 'span', 'def')
@@ -104,7 +111,7 @@ def getWordDefinition(word=None):
 	In list is present: word and definition
 """
 def getWordOfTheDay():
-	link = 'https://dexonline.ro/cuvantul-zilei'
+	link = DEXONLINE_BASE_URL + '/cuvantul-zilei'
 	return getWordOfThe(link)
 
 """
@@ -115,7 +122,7 @@ def getWordOfTheDay():
 	In list is present: word and definition
 """
 def getWordOfTheMonth():
-	link = 'https://dexonline.ro/cuvantul-lunii'
+	link = DEXONLINE_BASE_URL + '/cuvantul-lunii'
 	return getWordOfThe(link)
 
 """
@@ -126,7 +133,7 @@ def getWordOfTheMonth():
 	In list is present: words
 """
 def getParadigms(word=None):
-	link = 'https://dexonline.ro/definitie/' + str(word) + '/expandat/paradigma'
+	link = DEXONLINE_BASE_URL + '/definitie/' + quote(str(word), safe='') + '/expandat/paradigma'
 
 	uls = getTags(link, 'ul', 'commaList')
 
@@ -161,7 +168,7 @@ def reallyExist(word=None):
 	Return @randomWord
 """
 def randomWord():
-	link = "https://dexonline.ro/cuvinte-aleatorii"
+	link = DEXONLINE_BASE_URL + "/cuvinte-aleatorii"
 
 	divs = getTags(link, 'div', 'col-md-12 main-content')
 
