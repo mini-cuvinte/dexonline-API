@@ -124,3 +124,41 @@ DEFINITION: v vz desfălura
 ```
 #
 >The API is still being tested
+
+
+## Mini Cuvinte integration and maintenance
+
+This repository is a **Python HTML client for DEXonline**, not an official API and **not yet a bulk Supabase importer**. Mini Cuvinte stores its own dictionary locally; game moves never need to call this client.
+
+### Install for development
+
+```bash
+python3 -m venv .venv
+. .venv/bin/activate
+python -m pip install requests beautifulsoup4 html5lib
+python -c "from dexonlineBK import dexonlineBK as dex; print(dex.getWordDefinition('casa'))"
+```
+
+The legacy `setup.py` has outdated dependency metadata; the commands above install the required libraries directly.
+
+### Change the source if DEXonline changes
+
+| Setting | Default | What it changes |
+|---|---|---|
+| `DEXONLINE_BASE_URL` | `https://dexonline.ro` | Source host, not URL paths |
+| `DEXONLINE_DEFINITION_SELECTOR` | `span.def` | CSS selector used for definition blocks |
+| `DEXONLINE_TIMEOUT` | `15` | HTTP timeout in seconds |
+
+If the page URL structure changes, update `dexonlineBK/dexonlineBK.py` in the functions `getWordDefinition`, `getParadigms`, `getWordOfTheDay`, `getWordOfTheMonth` and `randomWord`. If the HTML changes, inspect `getTags` and the functions that parse definition nodes. Verify results with a small, permitted sample before release.
+
+Upstream references: [DEXonline website](https://dexonline.ro/), [DEXonline source code](https://github.com/dexonline/dexonline), [DEXonline wiki](https://wiki.dexonline.ro/). Respect source terms, attribution and dataset licensing. Do not assume the right to scrape or redistribute bulk dictionary content.
+
+### Planned ETL pipeline
+
+1. Retrieve permitted word data into a versioned staging set.
+2. Normalize Romanian characters, deduplicate and validate counts.
+3. Record source URL, license, date, checksum and importer version.
+4. Populate Mini Cuvinte `dictionary_private` staging/version tables in Supabase.
+5. Approve and activate the new dictionary version; retain the previous version for rollback.
+
+**Not implemented yet:** bulk import, scheduled synchronization and version publishing automation. The current Python client alone cannot populate the entire game dictionary. For the broader architecture see [game/docs/DEXONLINE.md](https://github.com/mini-cuvinte/game/blob/main/docs/DEXONLINE.md).
