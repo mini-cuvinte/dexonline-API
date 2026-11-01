@@ -1,3 +1,20 @@
+# DEXonline adapter for Mini Cuvinte
+
+This repository contains an **unofficial Python HTML adapter**, not an official DEXonline API and not yet a bulk dictionary importer.
+
+- [How to change DEXonline URLs/selectors](docs/DEXONLINE_SOURCE.md)
+- [Planned versioned import into Supabase](docs/IMPORT_PIPELINE.md)
+- [Game repository](https://github.com/mini-cuvinte/game)
+- [Clean deployment instructions](https://github.com/mini-cuvinte/game/blob/main/docs/DEPLOY_FROM_ZERO.md)
+
+Configurable environment variables: `DEXONLINE_BASE_URL`, `DEXONLINE_TIMEOUT`, `DEXONLINE_DEFINITION_SELECTOR`. See the source-maintenance guide.
+
+**License note:** verify permission to retrieve, store, use and redistribute DEXonline-derived dictionary content before running imports. No full dictionary dataset is committed here.
+
+---
+
+## Original package documentation
+
 # Dexonline.ro API
 
 A simple API that queries dexonline.ro, it returns the definitions of the words.
